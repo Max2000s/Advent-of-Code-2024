@@ -2,6 +2,7 @@ use advent_of_code_2024::*;
 use anyhow::*;
 use const_format::concatcp;
 use std::fs;
+use std::ops::Index;
 
 const DAY: &str = "05";
 const INPUT_FILE: &str = concatcp!("input/day", DAY, ".txt");
@@ -75,22 +76,7 @@ fn solve_part_one(input: &str) -> i32 {
     let mut sum: i32 = 0;
 
     for entry in &entries {
-        let mut valid = true;
-        for rule in &rules {
-            if let (Some(&rule_0), Some(&rule_1)) = (rule.get(0), rule.get(1)) {
-                if entry.contains(&rule_0) && entry.contains(&rule_1) {
-                    let index_first = entry.iter().position(|&r| r == rule_0).unwrap();
-                    let index_second = entry.iter().position(|&r| r == rule_1).unwrap();
-                    if index_first > index_second {
-                        valid = false;
-                        break;
-                    }
-                }
-            }
-        }
-        println!("entry is valid: {}", valid);
-        println!("entry has {} fields", entry.len());
-        if valid {
+        if is_valid_entry(&rules, entry) {
             if let Some(&middle_field) = entry.get(entry.len() / 2) {
                 println!("taking field {}", middle_field);
                 sum += middle_field;
@@ -101,7 +87,71 @@ fn solve_part_one(input: &str) -> i32 {
 }
 
 fn solve_part_two(input: &str) -> i32 {
-    0
+    let rules: Vec<Vec<i32>> = input
+        .lines()
+        .filter(|line| line.contains("|"))
+        .map(|rule| {
+            rule.split("|")
+                .filter_map(|num| num.trim().parse::<i32>().ok())
+                .collect()
+        })
+        .collect();
+    let mut entries: Vec<Vec<i32>> = input
+        .lines()
+        .filter(|line| line.contains(","))
+        .map(|entry| {
+            entry
+                .split(",")
+                .filter_map(|num| num.trim().parse::<i32>().ok())
+                .collect()
+        })
+        .collect();
+
+    let mut sum: i32 = 0;
+
+    for mut entry in &mut entries {
+        if !is_valid_entry(&rules, &entry) {
+            correct_entry(&rules, &mut entry);
+            if let Some(&middle_field) = entry.get(entry.len() / 2) {
+                println!("taking field {}", middle_field);
+                sum += middle_field;
+            }
+        }
+    }
+    sum
+}
+
+fn correct_entry(rules: &Vec<Vec<i32>>, entry: &mut Vec<i32>) {
+    while !is_valid_entry(rules, entry) {
+        for rule in rules {
+            if let (Some(&rule_0), Some(&rule_1)) = (rule.get(0), rule.get(1)) {
+                if entry.contains(&rule_0) && entry.contains(&rule_1) {
+                    let index_first = entry.iter().position(|&r| r == rule_0).unwrap();
+                    let index_second = entry.iter().position(|&r| r == rule_1).unwrap();
+                    if index_first > index_second {
+                        entry.swap(index_first, index_second);
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn is_valid_entry(rules: &Vec<Vec<i32>>, entry: &Vec<i32>) -> bool {
+    let mut valid = true;
+    for rule in rules {
+        if let (Some(&rule_0), Some(&rule_1)) = (rule.get(0), rule.get(1)) {
+            if entry.contains(&rule_0) && entry.contains(&rule_1) {
+                let index_first = entry.iter().position(|&r| r == rule_0).unwrap();
+                let index_second = entry.iter().position(|&r| r == rule_1).unwrap();
+                if index_first > index_second {
+                    valid = false;
+                    break;
+                }
+            }
+        }
+    }
+    valid
 }
 
 #[cfg(test)]
