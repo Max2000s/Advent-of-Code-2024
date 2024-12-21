@@ -80,7 +80,6 @@ fn solve_part_two(input: &str) -> usize {
     let directions = [(0, -1), (1, 0), (0, 1), (-1, 0)];
     let mut grid = HashMap::new();
 
-    // create grid
     for (y_idx, row) in input.lines().enumerate() {
         for (x_idx, col) in row.chars().enumerate() {
             grid.insert((x_idx as i32, y_idx as i32), col);
@@ -92,7 +91,6 @@ fn solve_part_two(input: &str) -> usize {
 
     let start_coords = start_coords.expect("Starting position not found.");
 
-    // collect barricatable cells
     let barricatable_cells: Vec<(i32, i32)> = grid
         .iter()
         .filter(|(_, &value)| value != '^' && value != '#')
@@ -104,54 +102,31 @@ fn solve_part_two(input: &str) -> usize {
         let mut current = start_coords;
         let mut direction_idx = 0;
 
-        // insert barrier
-        grid.insert(barrier, '#');
-
         loop {
-            // if field was already visited with the same direction we are in a loop!
             if visited.contains(&(current, direction_idx)) {
-                grid.insert(barrier, '.');
                 return true;
             }
 
             visited.insert((current, direction_idx));
 
-            // go through the grid
             let next = add_coords(&current, &directions[direction_idx]);
-            match grid.get(&next) {
-                Some('.') | Some('^') => {
-                    // set current to next if move is allowed
-                    current = next;
-                }
-                Some('#') => {
-                    // change direction
-                    direction_idx = (direction_idx + 1) % directions.len();
-                }
-                _ => break, // outside of the grid
+            let value = if next == barrier {
+                Some('#')
+            } else {
+                grid.get(&next).copied()
+            };
+            match value {
+                Some('.') | Some('^') => current = next,
+                Some('#') => direction_idx = (direction_idx + 1) % directions.len(),
+                _ => break,
             }
         }
-
-        // remove barrier again
-        grid.insert(barrier, '.');
         false
     };
-    println!("this is the ammount of cells: {}", barricatable_cells.len());
-    let mut overall = barricatable_cells.len();
-    let mut sum = 0;
-    for cell in barricatable_cells {
-        println!("Cells left: {}", overall);
-        if ends_in_loop(cell) {
-            sum += 1;
-        }
-        overall -= 1;
-    }
-    /*
     barricatable_cells
         .iter()
         .filter(|&cell| ends_in_loop(*cell))
         .count()
-        */
-    sum
 }
 
 #[cfg(test)]
