@@ -57,8 +57,19 @@ fn recursive_valid_equation(index: usize, result: i64, equation: &Equation) -> b
     return plus || mult;
 }
 
+fn recursive_valid_equation_part_two(index: usize, result: i64, equation: &Equation) -> bool {
+    if index == equation.1.len() {
+        return result == equation.0;
+    }
+    let concatted = format!("{}{}", result, equation.1[index]);
+    let concat =
+        recursive_valid_equation_part_two(index + 1, concatted.parse().ok().unwrap(), equation);
+    let plus = recursive_valid_equation_part_two(index + 1, result + equation.1[index], equation);
+    let mult = recursive_valid_equation_part_two(index + 1, result * equation.1[index], equation);
+    return plus || mult || concat;
+}
+
 fn solve_part_two(input: &str) -> i64 {
-    todo!()
     let equations: Vec<Equation> = input
         .lines()
         .filter_map(|line| {
@@ -73,7 +84,12 @@ fn solve_part_two(input: &str) -> i64 {
             Some((result, components))
         })
         .collect();
-    0
+
+    equations
+        .iter()
+        .filter(|&equation| recursive_valid_equation_part_two(0, 0, &equation))
+        .map(|equation| equation.0)
+        .sum()
 }
 
 #[cfg(test)]
